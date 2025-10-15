@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
+             version="3.2">
+
+    <persistence-unit name="ecommerce-pu" transaction-type="JTA">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <!--
+          CHANGEMENT 1 : On utilise la DataSource H2 par défaut de Wildfly.
+          C'est le seul changement nécessaire ici.
+        -->
+        <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
+
+        <!-- La liste de vos entités reste la même -->
+        <class>com.fstt.atelier2.mvc2_jpa.entities.Internaute</class>
+        <class>com.fstt.atelier2.mvc2_jpa.entities.Produit</class>
+        <class>com.fstt.atelier2.mvc2_jpa.entities.Panier</class>
+        <class>com.fstt.atelier2.mvc2_jpa.entities.Commande</class>
+        <class>com.fstt.atelier2.mvc2_jpa.entities.LigneCommande</class>
+        <class>com.fstt.atelier2.mvc2_jpa.entities.LignePanier</class>
+
+        <properties>
+            <!--
+              CHANGEMENT 2 : On spécifie le dialecte pour H2.
+            -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+
+            <!-- Cette propriété va créer/mettre à jour les tables dans H2 -->
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+
+            <!-- Ces propriétés restent utiles pour le débogage -->
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+
+    </persistence-unit>
+</persistence>
+
