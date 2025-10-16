@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.*;
 import java.util.Optional;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 
 @WebServlet(name = "compteServlet", urlPatterns = "/compte/*")
@@ -38,6 +40,7 @@ public class CompteServlet extends HttpServlet {
         switch (path) {
             case "/showLogin":
             case "/login":
+                if (req.getParameter("next") != null) req.setAttribute("next", req.getParameter("next"));
                 req.getRequestDispatcher("/pages/compte/login.jsp").forward(req, resp);
                 break;
             case "/logout":
@@ -46,6 +49,7 @@ public class CompteServlet extends HttpServlet {
                 break;
             case "/showRegister":
             case "/register":
+                if (req.getParameter("next") != null) req.setAttribute("next", req.getParameter("next"));
                 req.getRequestDispatcher("/pages/compte/register.jsp").forward(req, resp);
                 break;
             case "/profile": {
@@ -81,6 +85,8 @@ public class CompteServlet extends HttpServlet {
             case "/login": {
                 String email = req.getParameter("email");
                 String password = req.getParameter("password");
+                String next = req.getParameter("next");
+                if (next != null) next = URLDecoder.decode(next, StandardCharsets.UTF_8);
                 if (email == null || password == null || email.isBlank() || password.isBlank()) {
                     req.setAttribute("error", "Veuillez fournir email et mot de passe.");
                     req.getRequestDispatcher("/pages/compte/login.jsp").forward(req, resp);
@@ -90,9 +96,22 @@ public class CompteServlet extends HttpServlet {
                 if (userOpt.isPresent() && password.equals(userOpt.get().getMotDePasse())) {
                     HttpSession session = req.getSession(true);
                     session.setAttribute("user", userOpt.get());
+
+                    // Redirection sécurisée
+                    if (next != null && !next.isBlank()) {
+                        String ctx = req.getContextPath();
+                        if (next.startsWith(ctx + "/")) {
+                            resp.sendRedirect(next);
+                            return;
+                        } else if (next.startsWith("/")) {
+                            resp.sendRedirect(ctx + next);
+                            return;
+                        }
+                    }
                     resp.sendRedirect(req.getContextPath() + "/compte/profile");
                 } else {
                     req.setAttribute("error", "Identifiants invalides.");
+                    req.setAttribute("next", next);
                     req.getRequestDispatcher("/pages/compte/login.jsp").forward(req, resp);
                 }
                 break;
@@ -102,15 +121,19 @@ public class CompteServlet extends HttpServlet {
                 String prenom = req.getParameter("prenom");
                 String email = req.getParameter("email");
                 String password = req.getParameter("password");
+                String next = req.getParameter("next");
+                if (next != null) next = URLDecoder.decode(next, StandardCharsets.UTF_8);
 
                 if (email == null || password == null || email.isBlank() || password.isBlank()) {
                     req.setAttribute("error", "Email et mot de passe sont obligatoires.");
+                    req.setAttribute("next", next);
                     req.getRequestDispatcher("/pages/compte/register.jsp").forward(req, resp);
                     return;
                 }
 
                 if (internauteService.getByEmail(email).isPresent()) {
                     req.setAttribute("error", "Un compte existe déjà avec cet email.");
+                    req.setAttribute("next", next);
                     req.getRequestDispatcher("/pages/compte/register.jsp").forward(req, resp);
                     return;
                 }
@@ -123,6 +146,18 @@ public class CompteServlet extends HttpServlet {
                 internauteService.create(internaute);
 
                 req.getSession(true).setAttribute("user", internaute);
+
+                // Redirection sécurisée après inscription
+                if (next != null && !next.isBlank()) {
+                    String ctx = req.getContextPath();
+                    if (next.startsWith(ctx + "/")) {
+                        resp.sendRedirect(next);
+                        return;
+                    } else if (next.startsWith("/")) {
+                        resp.sendRedirect(ctx + next);
+                        return;
+                    }
+                }
                 resp.sendRedirect(req.getContextPath() + "/compte/profile");
                 break;
             }
